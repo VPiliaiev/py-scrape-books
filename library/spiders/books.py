@@ -3,6 +3,7 @@ import re
 import scrapy
 from scrapy.http import Response
 from typing import Dict, Any, Generator
+from library.items import LibraryItem
 
 rating_map = {
     "Zero": 0,
@@ -32,6 +33,7 @@ class BooksSpider(scrapy.Spider):
             self,
             response: Response
     ) -> Generator[Dict[str, Any], None, None]:
+        item = LibraryItem()
         rating_class = response.css("p.star-rating::attr(class)").get()
         rating_text = rating_class.split()[-1] if rating_class else None
 
@@ -48,14 +50,14 @@ class BooksSpider(scrapy.Spider):
         price_raw = response.css(".price_color::text").get()
         price = float(price_raw.replace("£", "")) if price_raw else None
 
-        yield {
-            "title": response.css("h1::text").get(),
-            "price": price,
-            "amount_in_stock": amount,
-            "rating": rating_map.get(rating_text),
-            "category": response.xpath(
-                "//ul[@class='breadcrumb']/li[last()-1]/a/text()"
-            ).get(),
-            "description": description,
-            "upc": response.css("table tr:nth-child(1) td::text").get(),
-        }
+        item["title"] = response.css("h1::text").get()
+        item["price"] = price
+        item["amount_in_stock"] = amount
+        item["rating"] = rating_map.get(rating_text)
+        item["category"] = response.xpath(
+            "//ul[@class='breadcrumb']/li[last()-1]/a/text()"
+        ).get()
+        item["description"] = description
+        item["upc"] = response.css("table tr:nth-child(1) td::text").get()
+
+        yield item
